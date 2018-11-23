@@ -72,7 +72,7 @@ class AStar(BestFirstSearch):
         if self.close.has_state(successor_node.state):
             already_found_node_with_same_state_in_close = self.close.get_node_by_state(successor_node.state)
             if already_found_node_with_same_state_in_close.expanding_priority > successor_node.expanding_priority:
-                self.close.remove_node(successor_node)
+                self.close.remove_node(already_found_node_with_same_state_in_close)
             else:
                 return
 
