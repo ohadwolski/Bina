@@ -15,7 +15,6 @@ Consts.set_seed()
 # --------------------------------------------------------------------
 # -------------------------- Map Problem -----------------------------
 # --------------------------------------------------------------------
-
 def plot_distance_and_expanded_wrt_weight_figure(
         weights: Union[np.ndarray, List[float]],
         total_distance: Union[np.ndarray, List[float]],
@@ -28,12 +27,12 @@ def plot_distance_and_expanded_wrt_weight_figure(
 
     fig, ax1 = plt.subplots()
 
-    # TODO: Plot the total distances with ax1. Use `ax1.plot(...)`.
-    # TODO: Make this curve colored blue with solid line style.
+    # FIXME: Plot the total distances with ax1. Use `ax1.plot(...)`.
+    # FIXME: Make this curve colored blue with solid line style.
     # See documentation here:
     # https://matplotlib.org/2.0.0/api/_as_gen/matplotlib.axes.Axes.plot.html
     # You can also search google for additional examples.
-    raise NotImplemented()
+    ax1.plot(weights, total_distance, 'b-')
 
     # ax1: Make the y-axis label, ticks and tick labels match the line color.
     ax1.set_ylabel('distance traveled', color='b')
@@ -43,10 +42,12 @@ def plot_distance_and_expanded_wrt_weight_figure(
     # Create another axis for the #expanded curve.
     ax2 = ax1.twinx()
 
-    # TODO: Plot the total expanded with ax2. Use `ax2.plot(...)`.
-    # TODO: ax2: Make the y-axis label, ticks and tick labels match the line color.
-    # TODO: Make this curve colored red with solid line style.
-    raise NotImplemented()
+    # FIXME: Plot the total expanded with ax2. Use `ax2.plot(...)`.
+    # FIXME: ax2: Make the y-axis label, ticks and tick labels match the line color.
+    # FIXME: Make this curve colored red with solid line style.
+    ax2.plot(weights, total_expanded, 'r-')
+    ax2.set_ylabel('states expanded', color='r')
+    ax2.tick_params('y', colors='r')
 
     fig.tight_layout()
     plt.show()
@@ -75,17 +76,7 @@ def run_astar_for_weights_in_range(heuristic_type: HeuristicFunctionType, proble
 
     # Call the function `plot_distance_and_expanded_by_weight_figure()`
     #  with that data.
-    plot_distance_and_expanded_by_weight_figure(w_array, cost_array, expanded_states_array)
-
-
-def plot_distance_and_expanded_by_weight_figure(w_array=[], cost_array=[], expanded_states_array=[]):
-    plt.plot(w_array, cost_array, 'b-')
-    plt.xlabel('weight')
-    plt.ylabel('distance traveled', color='tab:blue')
-    plt.twinx()
-    plt.plot(w_array, expanded_states_array, 'r-')
-    plt.ylabel('states expanded', color='tab:red')
-    plt.show()
+    plot_distance_and_expanded_wrt_weight_figure(w_array, cost_array, expanded_states_array)
 
 
 def map_problem():
@@ -103,14 +94,14 @@ def map_problem():
     #       solve the same `map_prob` with it and print the results (as before).
     # Notice: AStar constructor receives the heuristic *type* (ex: `MyHeuristicClass`),
     #         and not an instance of the heuristic (eg: not `MyHeuristicClass()`).
-    f_star = AStar(NullHeuristic, 0)
+    f_star = AStar(NullHeuristic)
     res = f_star.solve_problem(map_prob)
     print(res)
 
     # Ex.11
     # FIXME: create an instance of `AStar` with the `AirDistHeuristic`,
     #       solve the same `map_prob` with it and print the results (as before).
-    f_star = AStar(AirDistHeuristic, 0.5)
+    f_star = AStar(AirDistHeuristic)
     res = f_star.solve_problem(map_prob)
     print(res)
 
@@ -154,9 +145,9 @@ def relaxed_deliveries_problem():
     print(res)
 
     # Ex.18
-    # TODO: Call here the function `run_astar_for_weights_in_range()`
+    # FIXME: Call here the function `run_astar_for_weights_in_range()`
     #       with `MSTAirDistHeuristic` and `big_deliveries_prob`.
-    exit()  # TODO: remove!
+    run_astar_for_weights_in_range(MSTAirDistHeuristic, big_deliveries_prob)
 
     # Ex.24
     # FIXME:
@@ -170,14 +161,7 @@ def relaxed_deliveries_problem():
     #    algorithm is the MINIMUM among the costs of the solutions
     #    found in iterations {1,...,i}. Calculate the costs of the
     #    anytime algorithm wrt the #iteration and store them in a list.
-    # 3. Calculate and store the cost of the solution received by
-    #    the A* algorithm (with w=0.5).
-    # 4. Calculate and store the cost of the solution received by
-    #    the deterministic greedy algorithm (A* with w=1).
-    # 5. Plot a figure with the costs (y-axis) wrt the #iteration
-    #    (x-axis). Of course that the costs of A*, and deterministic
-    #    greedy are not dependent with the iteration number, so
-    #    these two should be represented by horizontal lines.
+
     k = 100
     iterations_costs = np.zeros([k])
     min_iterations_costs = np.zeros([k])
@@ -190,9 +174,34 @@ def relaxed_deliveries_problem():
         else:
             min_iterations_costs[i] = min_iterations_costs[i-1]
         print(res)
+
+    # 3. Calculate and store the cost of the solution received by
+    #    the A* algorithm (with w=0.5).
+
+    a_star = AStar(MSTAirDistHeuristic)
+    a_star_res = a_star.solve_problem(big_deliveries_prob)
+    print(a_star_res)
+
+    # 4. Calculate and store the cost of the solution received by
+    #    the deterministic greedy algorithm (A* with w=1).
+
+    dg = AStar(MSTAirDistHeuristic, 1)
+    dg_res = dg.solve_problem(big_deliveries_prob)
+    print(dg_res)
+
+    # 5. Plot a figure with the costs (y-axis) wrt the #iteration
+    #    (x-axis). Of course that the costs of A*, and deterministic
+    #    greedy are not dependent with the iteration number, so
+    #    these two should be represented by horizontal lines.
+
     plt.figure()
-    plt.plot(iterations_costs)
-    plt.plot(min_iterations_costs)
+    plt.plot(iterations_costs, label='Greedy Stochastic')
+    plt.plot(min_iterations_costs, label="Anytime Greedy Stochastic")
+    plt.plot([a_star_res.final_search_node.cost] * k, label="A*")
+    plt.plot([dg_res.final_search_node.cost] * k, label="Greedy Deterministic")
+    plt.xlabel("Iterations")
+    plt.ylabel("Total Cost")
+    plt.legend()
     plt.show()
 
 
@@ -216,6 +225,7 @@ def strict_deliveries_problem():
 
 
 def main():
+    relaxed_deliveries_problem()
     map_problem()
     relaxed_deliveries_problem()
     strict_deliveries_problem()
