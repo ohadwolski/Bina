@@ -22,25 +22,34 @@ class GreedyStochastic(BestFirstSearch):
 
     def _open_successor_node(self, problem: GraphProblem, successor_node: SearchNode):
         """
-        TODO: implement this method!
+        FIXME: implement this method!
         """
 
-        raise NotImplemented()  # TODO: remove!
+        if self.close.has_state(successor_node.state):
+            return
+
+        if self.open.has_state(successor_node.state):
+            already_found_node_with_same_state = self.open.get_node_by_state(successor_node.state)
+            if already_found_node_with_same_state.expanding_priority > successor_node.expanding_priority:
+                self.open.extract_node(already_found_node_with_same_state)
+
+        if not self.open.has_state(successor_node.state):
+            self.open.push_node(successor_node)
 
     def _calc_node_expanding_priority(self, search_node: SearchNode) -> float:
         """
-        TODO: implement this method!
+        FIXME: implement this method!
         Remember: `GreedyStochastic` is greedy.
         """
 
-        raise NotImplemented()  # TODO: remove!
+        return self.heuristic_function.estimate(search_node.state)
 
     def _extract_next_search_node_to_expand(self) -> Optional[SearchNode]:
         """
         Extracts the next node to expand from the open queue,
          using the stochastic method to choose out of the N
          best items from open.
-        TODO: implement this method!
+        FIXME: implement this method!
         Use `np.random.choice(...)` whenever you need to randomly choose
          an item from an array of items given a probabilities array `p`.
         You can read the documentation of `np.random.choice(...)` and
@@ -51,4 +60,33 @@ class GreedyStochastic(BestFirstSearch):
                 pushed again into that queue.
         """
 
-        raise NotImplemented()  # TODO: remove!
+        if self.open.is_empty():
+            return None
+
+        N = self.N if len(self.open) >= self.N else len(self.open)
+        best_nodes = [self.open.pop_next_node() for _ in range(N)]
+        best_nodes_cost = best_nodes_cost_scaled = np.zeros([N])
+        final_node_detected = False
+        for i in range(N):
+            best_nodes_cost[i] = self._calc_node_expanding_priority(best_nodes[i])
+            if 0 == best_nodes_cost[i]:
+                node_to_expand = best_nodes[i]
+                final_node_detected = True
+
+        if not final_node_detected:
+            best_nodes_cost_scaled = best_nodes_cost / np.min(best_nodes_cost)
+
+            best_nodes_prob = np.power(best_nodes_cost_scaled, -1 / self.T).T / \
+                              np.sum(np.power(best_nodes_cost_scaled, -1 / self.T), axis=0)
+            rand_index = np.random.choice(N, p=best_nodes_prob)
+            node_to_expand = best_nodes[rand_index]
+
+        self.T = self.T * self.T_scale_factor
+
+        for i in range(N):
+            if best_nodes[i] != node_to_expand:
+                self.open.push_node(best_nodes[i])
+
+        if self.use_close:
+            self.close.add_node(node_to_expand)
+        return node_to_expand

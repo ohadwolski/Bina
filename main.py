@@ -76,13 +76,13 @@ def map_problem():
     uc = UniformCost()
     res = uc.solve_problem(map_prob)
     print(res)
-
+    return
     # Ex.10
     # TODO: create an instance of `AStar` with the `NullHeuristic`,
     #       solve the same `map_prob` with it and print the results (as before).
     # Notice: AStar constructor receives the heuristic *type* (ex: `MyHeuristicClass`),
     #         and not an instance of the heuristic (eg: not `MyHeuristicClass()`).
-    exit()  # TODO: remove!
+    exit(0)  # TODO: remove!
 
     # Ex.11
     # TODO: create an instance of `AStar` with the `AirDistHeuristic`,
@@ -98,7 +98,7 @@ def map_problem():
     #    (upper in this file).
     # 3. Call here the function `run_astar_for_weights_in_range()`
     #    with `AirDistHeuristic` and `map_prob`.
-    exit()  # TODO: remove!
+    exit(0)  # TODO: remove!
 
 
 # --------------------------------------------------------------------
@@ -112,7 +112,7 @@ def relaxed_deliveries_problem():
 
     big_delivery = DeliveriesProblemInput.load_from_file('big_delivery.in', roads)
     big_deliveries_prob = RelaxedDeliveriesProblem(big_delivery)
-
+    """
     # Ex.16
     # TODO: create an instance of `AStar` with the `MaxAirDistHeuristic`,
     #       solve the `big_deliveries_prob` with it and print the results (as before).
@@ -127,9 +127,9 @@ def relaxed_deliveries_problem():
     # TODO: Call here the function `run_astar_for_weights_in_range()`
     #       with `MSTAirDistHeuristic` and `big_deliveries_prob`.
     exit()  # TODO: remove!
-
+    """
     # Ex.24
-    # TODO:
+    # FIXME:
     # 1. Run the stochastic greedy algorithm for 100 times.
     #    For each run, store the cost of the found solution.
     #    Store these costs in a list.
@@ -148,7 +148,22 @@ def relaxed_deliveries_problem():
     #    (x-axis). Of course that the costs of A*, and deterministic
     #    greedy are not dependent with the iteration number, so
     #    these two should be represented by horizontal lines.
-    exit()  # TODO: remove!
+    k = 100
+    iterations_costs = np.zeros([k])
+    min_iterations_costs = np.zeros([k])
+    for i in range(k):
+        gs = GreedyStochastic(MSTAirDistHeuristic)
+        res = gs.solve_problem(big_deliveries_prob)
+        iterations_costs[i] = res.final_search_node.cost
+        if i == 0 or iterations_costs[i] < min_iterations_costs[i-1]:
+            min_iterations_costs[i] = iterations_costs[i]
+        else:
+            min_iterations_costs[i] = min_iterations_costs[i-1]
+        print(res)
+    plt.figure()
+    plt.plot(iterations_costs)
+    plt.plot(min_iterations_costs)
+    plt.show()
 
 
 def strict_deliveries_problem():
