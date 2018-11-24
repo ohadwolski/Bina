@@ -72,7 +72,7 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
                 continue
 
             # caching with key: [junc_1, junc_2] and value: air_dist
-            cache_key = frozenset([state_to_expand.current_location.index, stop_point.index])
+            cache_key = (state_to_expand.current_location.index, stop_point.index)  #frozenset([state_to_expand.current_location.index, stop_point.index])
             map_dist = self._get_from_cache(cache_key)
             if not map_dist:  # we have miss
                 map_prob = MapProblem(self.roads, state_to_expand.current_location.index, stop_point.index)
