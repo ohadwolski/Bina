@@ -173,21 +173,21 @@ def relaxed_deliveries_problem():
             min_iterations_costs[i] = iterations_costs[i]
         else:
             min_iterations_costs[i] = min_iterations_costs[i-1]
-        print(res)
+        # print(res)
 
     # 3. Calculate and store the cost of the solution received by
     #    the A* algorithm (with w=0.5).
 
     a_star = AStar(MSTAirDistHeuristic)
     a_star_res = a_star.solve_problem(big_deliveries_prob)
-    print(a_star_res)
+    # print(a_star_res)
 
     # 4. Calculate and store the cost of the solution received by
     #    the deterministic greedy algorithm (A* with w=1).
 
     dg = AStar(MSTAirDistHeuristic, 1)
     dg_res = dg.solve_problem(big_deliveries_prob)
-    print(dg_res)
+    # print(dg_res)
 
     # 5. Plot a figure with the costs (y-axis) wrt the #iteration
     #    (x-axis). Of course that the costs of A*, and deterministic
@@ -201,6 +201,7 @@ def relaxed_deliveries_problem():
     plt.plot([dg_res.final_search_node.cost] * k, label="Greedy Deterministic")
     plt.xlabel("Iterations")
     plt.ylabel("Total Cost")
+    plt.title("Distance Traveled of Greedy Stochastic and Anytime Greedy Stochastic")
     plt.legend()
     plt.show()
 
@@ -227,8 +228,8 @@ def strict_deliveries_problem():
 
 
 def main():
-    #map_problem()
-    #relaxed_deliveries_problem()
+    map_problem()
+    relaxed_deliveries_problem()
     strict_deliveries_problem()
 
 
