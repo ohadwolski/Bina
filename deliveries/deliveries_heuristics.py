@@ -95,7 +95,7 @@ class RelaxedDeliveriesHeuristic(HeuristicFunction):
         res = a_star.solve_problem(relaxed_del_prob)
 
         if not res.final_search_node:
-            # There is no solution for relaxed delievery problem from current state
+            # There is no solution for relaxed delivery problem from current state
             return np.inf
         return res.final_search_node.cost
 
