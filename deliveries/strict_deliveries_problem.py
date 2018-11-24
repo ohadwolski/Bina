@@ -58,7 +58,7 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
 
     def expand_state_with_costs(self, state_to_expand: GraphProblemState) -> Iterator[Tuple[GraphProblemState, float]]:
         """
-        TODO: implement this method!
+        FIXME: implement this method!
         This method represents the `Succ: S -> P(S)` function of the strict deliveries problem.
         The `Succ` function is defined by the problem operators as shown in class.
         The relaxed problem operators are defined in the assignment instructions.
@@ -68,13 +68,37 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
         """
         assert isinstance(state_to_expand, StrictDeliveriesState)
 
-        raise NotImplemented()  # TODO: remove!
+        for stop_point in self.possible_stop_points:
+            if stop_point in state_to_expand.dropped_so_far:
+                continue
+
+            # caching with key: [junc_1, junc_2] and value: air_dist
+            misses = self.nr_cache_misses
+            key = frozenset([state_to_expand.current_location.index, stop_point.index])
+            air_dist = self._get_from_cache(key)
+            if self.nr_cache_misses > misses:  # we have miss
+                map_prob = MapProblem(self.roads, state_to_expand.current_location.index, stop_point.index)
+                res = self.inner_problem_solver.solve_problem(map_prob)
+                air_dist = res.final_search_node.cost
+                self._insert_to_cache(key, air_dist)
+
+            if air_dist > state_to_expand.fuel:
+                continue
+            if stop_point in self.gas_stations:
+                next_dropped_so_far = state_to_expand.dropped_so_far
+                next_fuel = self.gas_tank_capacity
+            else:
+                next_dropped_so_far = state_to_expand.dropped_so_far | frozenset([stop_point])
+                next_fuel = state_to_expand.fuel - air_dist
+            successor_state = StrictDeliveriesState(stop_point, next_dropped_so_far, next_fuel)
+            yield successor_state, air_dist
 
     def is_goal(self, state: GraphProblemState) -> bool:
         """
         This method receives a state and returns whether this state is a goal.
-        TODO: implement this method!
+        FIXME: implement this method!
         """
         assert isinstance(state, StrictDeliveriesState)
+        # same as for relaxed?
 
-        raise NotImplemented()  # TODO: remove!
+        return len(self.drop_points) == len(state.dropped_so_far)
