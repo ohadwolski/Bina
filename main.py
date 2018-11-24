@@ -228,8 +228,8 @@ def strict_deliveries_problem():
 
 
 def main():
-    #map_problem()
-    #relaxed_deliveries_problem()
+    map_problem()
+    relaxed_deliveries_problem()
     strict_deliveries_problem()
 
 
