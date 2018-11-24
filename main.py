@@ -219,9 +219,11 @@ def strict_deliveries_problem():
     run_astar_for_weights_in_range(MSTAirDistHeuristic, small_deliveries_strict_problem)
 
     # Ex.28
-    # TODO: create an instance of `AStar` with the `RelaxedDeliveriesHeuristic`,
+    # FIXME: create an instance of `AStar` with the `RelaxedDeliveriesHeuristic`,
     #       solve the `small_deliveries_strict_problem` with it and print the results (as before).
-    exit()  # TODO: remove!
+    a_star = AStar(RelaxedDeliveriesHeuristic)
+    a_star_res = a_star.solve_problem(small_deliveries_strict_problem)
+    print(a_star_res)
 
 
 def main():

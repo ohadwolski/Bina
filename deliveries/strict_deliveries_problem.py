@@ -73,17 +73,17 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
                 continue
 
             # caching with key: [junc_1, junc_2] and value: air_dist
-            misses = self.nr_cache_misses
-            key = frozenset([state_to_expand.current_location.index, stop_point.index])
-            air_dist = self._get_from_cache(key)
-            if self.nr_cache_misses > misses:  # we have miss
+            cache_key = frozenset([state_to_expand.current_location.index, stop_point.index])
+            air_dist = self._get_from_cache(cache_key)
+            if not air_dist:  # we have miss
                 map_prob = MapProblem(self.roads, state_to_expand.current_location.index, stop_point.index)
                 res = self.inner_problem_solver.solve_problem(map_prob)
                 air_dist = res.final_search_node.cost
-                self._insert_to_cache(key, air_dist)
+                self._insert_to_cache(cache_key, air_dist)
 
             if air_dist > state_to_expand.fuel:
                 continue
+
             if stop_point in self.gas_stations:
                 next_dropped_so_far = state_to_expand.dropped_so_far
                 next_fuel = self.gas_tank_capacity
