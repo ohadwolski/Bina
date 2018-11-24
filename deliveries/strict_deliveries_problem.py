@@ -6,7 +6,6 @@ from .relaxed_deliveries_problem import RelaxedDeliveriesState, RelaxedDeliverie
 
 from typing import Set, FrozenSet, Optional, Iterator, Tuple, Union
 
-
 class StrictDeliveriesState(RelaxedDeliveriesState):
     """
     An instance of this class represents a state of the strict
@@ -74,14 +73,17 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
 
             # caching with key: [junc_1, junc_2] and value: air_dist
             cache_key = frozenset([state_to_expand.current_location.index, stop_point.index])
-            air_dist = self._get_from_cache(cache_key)
-            if not air_dist:  # we have miss
+            map_dist = self._get_from_cache(cache_key)
+            if not map_dist:  # we have miss
                 map_prob = MapProblem(self.roads, state_to_expand.current_location.index, stop_point.index)
                 res = self.inner_problem_solver.solve_problem(map_prob)
-                air_dist = res.final_search_node.cost
-                self._insert_to_cache(cache_key, air_dist)
+                if res.final_search_node:
+                    map_dist = res.final_search_node.cost
+                else:
+                    map_dist = float("inf")
+                self._insert_to_cache(cache_key, map_dist)
 
-            if air_dist > state_to_expand.fuel:
+            if map_dist > state_to_expand.fuel:
                 continue
 
             if stop_point in self.gas_stations:
@@ -89,9 +91,9 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
                 next_fuel = self.gas_tank_capacity
             else:
                 next_dropped_so_far = state_to_expand.dropped_so_far | frozenset([stop_point])
-                next_fuel = state_to_expand.fuel - air_dist
+                next_fuel = state_to_expand.fuel - map_dist
             successor_state = StrictDeliveriesState(stop_point, next_dropped_so_far, next_fuel)
-            yield successor_state, air_dist
+            yield successor_state, map_dist
 
     def is_goal(self, state: GraphProblemState) -> bool:
         """
@@ -99,6 +101,5 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
         FIXME: implement this method!
         """
         assert isinstance(state, StrictDeliveriesState)
-        # same as for relaxed?
 
         return len(self.drop_points) == len(state.dropped_so_far)
