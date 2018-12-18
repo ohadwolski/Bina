@@ -76,6 +76,7 @@ class AStar(BestFirstSearch):
             else:
                 return
 
+
         if self.open.has_state(successor_node.state):
             already_found_node_with_same_state_in_open = self.open.get_node_by_state(successor_node.state)
             if already_found_node_with_same_state_in_open.expanding_priority > successor_node.expanding_priority:

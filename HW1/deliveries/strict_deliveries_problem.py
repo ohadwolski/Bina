@@ -68,6 +68,7 @@ class StrictDeliveriesProblem(RelaxedDeliveriesProblem):
         assert isinstance(state_to_expand, StrictDeliveriesState)
 
         for stop_point in self.possible_stop_points:
+
             if stop_point in state_to_expand.dropped_so_far:
                 continue
 
