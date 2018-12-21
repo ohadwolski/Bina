@@ -179,7 +179,9 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     """
     agent_idx = 0
     cur_max = -float('inf')
-    for action in gameState.getLegalActions(agent_idx):
+    next_actions = gameState.getLegalActions(agent_idx)
+    next_actions.sort()
+    for action in next_actions:
       v = self.minMaxRecursion(self.depth, agent_idx + 1, gameState.generateSuccessor(agent_idx, action), cur_max, float('inf'))
       if v > cur_max:
         cur_max = v
@@ -226,10 +228,35 @@ class RandomExpectimaxAgent(MultiAgentSearchAgent):
       Returns the expectimax action using self.depth and self.evaluationFunction
       All ghosts should be modeled as choosing uniformly at random from their legal moves.
     """
+    agent_idx = 0
+    cur_max = -float('inf')
+    for action in gameState.getLegalActions(agent_idx):
+      v = self.minMaxRecursion(self.depth, agent_idx + 1, gameState.generateSuccessor(agent_idx, action))
+      if v > cur_max:
+        cur_max = v
+        max_action = action
+    return max_action
 
-    # BEGIN_YOUR_CODE
-    raise Exception("Not implemented yet")
-    # END_YOUR_CODE
+  def minMaxRecursion(self, depth, agent_idx, game_state):
+    if depth == 0 or game_state.isWin() or game_state.isLose():
+      return self.evaluationFunction(game_state)
+    if agent_idx == 0:  # pacman
+      cur_max = -float('inf')
+      for action in game_state.getLegalActions(agent_idx):
+        v = self.minMaxRecursion(depth, agent_idx + 1, game_state.generateSuccessor(agent_idx, action))
+        cur_max = max(v, cur_max)
+      return cur_max
+    else:  # ghost
+      next_agent_idx = agent_idx + 1
+      if agent_idx >= (game_state.getNumAgents() - 1):
+        depth -= 1
+        next_agent_idx = 0
+      legal_actions = game_state.getLegalActions(agent_idx)
+      total_sum = 0.0
+      for action in legal_actions:
+        total_sum += self.minMaxRecursion(depth, next_agent_idx, game_state.generateSuccessor(agent_idx, action))
+      return total_sum / len(legal_actions)
+
 
 ######################################################################################
 # f: implementing directional expectimax
