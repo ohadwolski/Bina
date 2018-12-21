@@ -67,6 +67,7 @@ def betterEvaluationFunction(gameState):
   gameState.getScore():
   The GameState class is defined in pacman.py and you might want to look into that for other helper methods.
   """
+  return gameState.getScore()
 
 #     ********* MultiAgent Search Agents- sections c,d,e,f*********
 
@@ -132,10 +133,39 @@ class MinimaxAgent(MultiAgentSearchAgent):
         The depth to which search should continue
 
     """
+    agent_idx = 0
+    cur_max = -float('inf')
+    for action in gameState.getLegalActions(agent_idx):
+      v = self.minMaxRecursion(self.depth, agent_idx+1, gameState.generateSuccessor(agent_idx, action))
+      if v > cur_max:
+        cur_max = v
+        max_action = action
+    return max_action
 
-    # BEGIN_YOUR_CODE
-    raise Exception("Not implemented yet")
-    # END_YOUR_CODE
+  def minMaxRecursion(self, depth, agent_idx, game_state):
+    if depth == 0 or game_state.isWin() or game_state.isLose():
+      return self.evaluationFunction(game_state)
+    if agent_idx == 0: #pacman
+      cur_max = -float('inf')
+      for action in game_state.getLegalActions(agent_idx):
+        v = self.minMaxRecursion(depth, agent_idx + 1, game_state.generateSuccessor(agent_idx, action))
+        if v > cur_max:
+          cur_max = v
+      return cur_max
+    else: #ghost
+      cur_min = float('inf')
+      next_agent_idx = agent_idx + 1
+      if agent_idx >= (game_state.getNumAgents() - 1):
+        depth -= 1
+        next_agent_idx = 0
+      for action in game_state.getLegalActions(agent_idx):
+        v = self.minMaxRecursion(depth, next_agent_idx, game_state.generateSuccessor(agent_idx, action))
+        if v < cur_min:
+          cur_min = v
+      return cur_min
+
+
+
 
 ######################################################################################
 # d: implementing alpha-beta
