@@ -1,5 +1,8 @@
 import random, util
 from game import Agent
+from game import Actions
+from game import Directions
+from util import manhattanDistance
 
 #     ********* Reflex agent- sections a and b *********
 class ReflexAgent(Agent):
@@ -271,10 +274,66 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
       Returns the expectimax action using self.depth and self.evaluationFunction
       All ghosts should be modeled as using the DirectionalGhost distribution to choose from their legal moves.
     """
+    agent_idx = 0
+    cur_max = -float('inf')
+    for action in gameState.getLegalActions(agent_idx):
+      v = self.minMaxRecursion(self.depth, agent_idx + 1, gameState.generateSuccessor(agent_idx, action))
+      if v > cur_max:
+        cur_max = v
+        max_action = action
+    return max_action
 
-    # BEGIN_YOUR_CODE
-    raise Exception("Not implemented yet")
-    # END_YOUR_CODE
+  def minMaxRecursion(self, depth, agent_idx, game_state):
+    if depth == 0 or game_state.isWin() or game_state.isLose():
+      return self.evaluationFunction(game_state)
+    if agent_idx == 0:  # pacman
+      cur_max = -float('inf')
+      for action in game_state.getLegalActions(agent_idx):
+        v = self.minMaxRecursion(depth, agent_idx + 1, game_state.generateSuccessor(agent_idx, action))
+        cur_max = max(v, cur_max)
+      return cur_max
+    else:  # ghost
+      next_agent_idx = agent_idx + 1
+      if agent_idx >= (game_state.getNumAgents() - 1):
+        depth -= 1
+        next_agent_idx = 0
+      legal_actions = game_state.getLegalActions(agent_idx)
+      total_sum = 0.0
+      p = self.get_directional_ghost_dist(game_state, agent_idx)
+      for action in legal_actions:
+        total_sum += p[action] * self.minMaxRecursion(depth, next_agent_idx, game_state.generateSuccessor(agent_idx, action))
+      return total_sum
+
+  def get_directional_ghost_dist(self, game_state, agent_idx):
+    # TODO: check if constants
+    prob_attack = 0.8
+    prob_scaredFlee = 0.8
+
+    ghostState = game_state.getGhostState(agent_idx)
+    legalActions = game_state.getLegalActions(agent_idx)
+    pos = game_state.getGhostPosition(agent_idx)
+    isScared = ghostState.scaredTimer > 0
+    speed = 1
+    if isScared: speed = 0.5
+    actionVectors = [Actions.directionToVector(a, speed) for a in legalActions]
+    newPositions = [(pos[0] + a[0], pos[1] + a[1]) for a in actionVectors]
+    pacmanPosition = game_state.getPacmanPosition()
+    # Select best actions given the state
+    distancesToPacman = [manhattanDistance(pos, pacmanPosition) for pos in newPositions]
+    if isScared:
+      bestScore = max(distancesToPacman)
+      bestProb = prob_scaredFlee
+    else:
+      bestScore = min(distancesToPacman)
+      bestProb = prob_attack
+    bestActions = [action for action, distance in zip(legalActions, distancesToPacman) if distance == bestScore]
+
+    # Construct distribution
+    dist = util.Counter()
+    for a in bestActions: dist[a] = bestProb / len(bestActions)
+    for a in legalActions: dist[a] += (1 - bestProb) / len(legalActions)
+    dist.normalize()
+    return dist
 
 
 ######################################################################################
