@@ -2,6 +2,9 @@ import random, util
 from game import Agent
 
 #     ********* Reflex agent- sections a and b *********
+from HW2.pacman.util import *
+
+
 class ReflexAgent(Agent):
   """
     A reflex agent chooses an action at each choice point by examining
@@ -37,7 +40,8 @@ class ReflexAgent(Agent):
     and returns a number, where higher numbers are better.
     """
     successorGameState = currentGameState.generatePacmanSuccessor(action)
-    return scoreEvaluationFunction(successorGameState)
+    #return scoreEvaluationFunction(successorGameState)
+    return betterEvaluationFunction(successorGameState)
 
 
 #     ********* Evaluation functions *********
@@ -67,7 +71,118 @@ def betterEvaluationFunction(gameState):
   gameState.getScore():
   The GameState class is defined in pacman.py and you might want to look into that for other helper methods.
   """
-  return gameState.getScore()
+
+  # TODO: question: is it possible to run the game without ghosts?
+  # TODO: if so, check if list is null
+
+  # find closest ghost:
+  closestGhost = ClosestGhostToPacman(gameState)
+
+
+  pacmanPos = gameState.getPacmanPosition()
+  closestGhostPos = closestGhost.configuration.pos
+  distanceFromClosestGhost = manhattanDistance(closestGhostPos, pacmanPos)
+
+  # heuristic parameters:
+
+  # game score:
+  gameScore = gameState.getScore()
+
+  # distance from closest ghost:
+  # distanceFromClosestGhost
+
+  # distance from closest food:
+  listOfFood = getListOfFood(gameState)
+  closestFood = getClosestElementToPacman(gameState, listOfFood)
+  if closestFood is None:
+    distanceFromClosestFood = 0
+  else:
+    distanceFromClosestFood = manhattanDistance(closestFood, pacmanPos)
+
+  # amount of food on grid:
+  foodAmount = gameState.getNumFood()
+
+  # distance from closest capsule:
+  capsulesPos = gameState.getCapsules()
+  if len(capsulesPos) == 0:
+    distanceFromClosestCapsule = 0
+  else:
+    closestCapsule = getClosestElementToPacman(gameState, capsulesPos)
+    distanceFromClosestCapsule = manhattanDistance(closestCapsule, pacmanPos)
+
+
+
+  # decide which state are we in: Danger, Chase, Safe, Normal
+  # TODO: Change radius according to try and error:
+  dangerRadius = 10
+  safeRadius = 100
+
+  if distanceFromClosestGhost < dangerRadius:
+    # check if closest ghost is scared:
+    if closestGhost.scaredTimer > 0:
+      # ghost is scared, Chase mode
+      a = 100
+      b = 200
+      c = 30
+      d = -40
+      e = 0
+    else:
+      # ghost is not scared, Danger
+      a = 20
+      b = -100
+      c = 10
+      d = -10
+      e = 90
+  elif distanceFromClosestGhost < safeRadius:
+    # Normal mode
+    a = 50
+    b = -30
+    c = 40
+    d = -40
+    e = 20
+  else:
+    # Safe mode
+    a = 50
+    b = -10
+    c = 50
+    d = -40
+    e = 0
+
+  score = a*gameScore + b*distanceFromClosestGhost + 0*distanceFromClosestFood + d*foodAmount + 0*distanceFromClosestCapsule
+  return score
+
+
+def getListOfFood(gameState):
+  foodGrid = gameState.getFood()
+  foodPos = []
+  for x, a in enumerate(foodGrid):
+    for y, aa in enumerate(a):
+      if aa == True:
+        foodPos.append([x, y])
+  return foodPos
+
+def getClosestElementToPacman(gameState, listOfPos):
+  pacmanPos = gameState.getPacmanPosition()
+  closestElementPos = listOfPos[0]
+  for pos in listOfPos:
+    if manhattanDistance(pos, pacmanPos) < manhattanDistance(closestElementPos, pacmanPos):
+      closestElementPos = pos
+  return closestElementPos
+
+def ClosestGhostToPacman(gameState):
+  pacmanPos = gameState.getPacmanPosition()
+  ghostStates = gameState.getGhostStates()
+  closestGhost = gameState.getGhostState(1)
+
+  # find closest ghost to pacman:
+  for ghostState in ghostStates:
+    ghostPos = ghostState.configuration.pos
+    closestGhostPos = closestGhost.configuration.pos
+    if manhattanDistance(ghostPos, pacmanPos) < manhattanDistance(closestGhostPos, pacmanPos):
+      closestGhost = ghostState
+
+  return closestGhost
+
 
 #     ********* MultiAgent Search Agents- sections c,d,e,f*********
 
