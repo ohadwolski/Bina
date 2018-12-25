@@ -1,11 +1,8 @@
-import random, util
-from game import Agent
-from game import Actions
-from game import Directions
-from util import manhattanDistance
+import random, util, game
+from game import *
+from util import *
 
 #     ********* Reflex agent- sections a and b *********
-from HW2.pacman.util import *
 
 
 class ReflexAgent(Agent):
@@ -86,6 +83,7 @@ def betterEvaluationFunction(gameState):
   closestGhostPos = closestGhost.configuration.pos
   distanceFromClosestGhost = manhattanDistance(closestGhostPos, pacmanPos)
 
+  #print(distanceFromClosestGhost)
   # heuristic parameters:
 
   # game score:
@@ -96,7 +94,11 @@ def betterEvaluationFunction(gameState):
 
   # distance from closest food:
   listOfFood = getListOfFood(gameState)
-  closestFood = getClosestElementToPacman(gameState, listOfFood)
+  if len(listOfFood) == 0:
+    closestFood = None
+  else:
+    closestFood = getClosestElementToPacman(gameState, listOfFood)
+
   if closestFood is None:
     distanceFromClosestFood = 0
   else:
@@ -117,41 +119,51 @@ def betterEvaluationFunction(gameState):
 
   # decide which state are we in: Danger, Chase, Safe, Normal
   # TODO: Change radius according to try and error:
-  dangerRadius = 10
-  safeRadius = 100
+  dangerRadius = 3
+  safeRadius = 7
 
   if distanceFromClosestGhost < dangerRadius:
-    # check if closest ghost is scared:
-    if closestGhost.scaredTimer > 0:
-      # ghost is scared, Chase mode
-      a = 100
-      b = 200
-      c = 30
-      d = -40
-      e = 0
-    else:
-      # ghost is not scared, Danger
-      a = 20
-      b = -100
-      c = 10
-      d = -10
-      e = 90
+    # Danger mode
+      a = 0.1
+      b = 0.6
+      c = 0
+      d = 0
+      e = 0.3
+      score_factor = 1
   elif distanceFromClosestGhost < safeRadius:
     # Normal mode
-    a = 50
-    b = -30
-    c = 40
-    d = -40
-    e = 20
+      a = 0.2
+      b = 0.2
+      c = 0.2
+      d = 0.2
+      e = 0.2
+      score_factor = 1
   else:
     # Safe mode
-    a = 50
-    b = -10
-    c = 50
-    d = -40
-    e = 0
+      a = 0.3
+      b = 0
+      c = 0.4
+      d = 0.3
+      e = 0
+      score_factor = 1
 
-  score = a*gameScore + b*distanceFromClosestGhost + 0*distanceFromClosestFood + d*foodAmount + 0*distanceFromClosestCapsule
+  c = b = d = e = 1
+  a = 0.1
+  b = 2
+
+  if closestGhost.scaredTimer > 0:
+    score = a * gameScore \
+            + b * (1 / (distanceFromClosestGhost+1))\
+            + c * (1 / (distanceFromClosestFood+1)) \
+            + e * (1 / (distanceFromClosestCapsule+1)) \
+            + d * (1 / (foodAmount+1))
+  else:
+    score = a * gameScore \
+            - b * (1 / (distanceFromClosestGhost+1))\
+            + c * (1 / (distanceFromClosestFood+1)) \
+            + e * (1 / (distanceFromClosestCapsule+1)) \
+            + d * (1 / (foodAmount+1))
+  score *= score_factor
   return score
 
 
@@ -164,6 +176,7 @@ def getListOfFood(gameState):
         foodPos.append([x, y])
   return foodPos
 
+
 def getClosestElementToPacman(gameState, listOfPos):
   pacmanPos = gameState.getPacmanPosition()
   closestElementPos = listOfPos[0]
@@ -171,6 +184,7 @@ def getClosestElementToPacman(gameState, listOfPos):
     if manhattanDistance(pos, pacmanPos) < manhattanDistance(closestElementPos, pacmanPos):
       closestElementPos = pos
   return closestElementPos
+
 
 def ClosestGhostToPacman(gameState):
   pacmanPos = gameState.getPacmanPosition()
