@@ -3,10 +3,6 @@ import random, util, game
 from game import *
 from util import *
 
-
-#     ********* Reflex agent- sections a and b *********
-
-
 class ReflexAgent(Agent):
     """
     A reflex agent chooses an action at each choice point by examining
@@ -455,16 +451,42 @@ class DirectionalExpectimaxAgent(MultiAgentSearchAgent):
 # I: implementing competition agent
 
 class CompetitionAgent(MultiAgentSearchAgent):
-    """
-    Your competition agent
-  """
 
     def getAction(self, gameState):
-        """
-      Returns the action using self.depth and self.evaluationFunction
+        agent_idx = 0
+        cur_max = -float('inf')
+        next_actions = gameState.getLegalActions(agent_idx)
+        next_actions.sort()
+        for action in next_actions:
+            v = self.minMaxRecursion(self.depth, agent_idx + 1, gameState.generateSuccessor(agent_idx, action), cur_max,
+                                     float('inf'))
+            if v > cur_max:
+                cur_max = v
+                max_action = action
+        return max_action
 
-    """
-
-        # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+    def minMaxRecursion(self, depth, agent_idx, game_state, a, b):
+        if depth == 0 or game_state.isWin() or game_state.isLose():
+            return self.evaluationFunction(game_state)
+        if agent_idx == 0:  # pacman
+            cur_max = -float('inf')
+            for action in game_state.getLegalActions(agent_idx):
+                v = self.minMaxRecursion(depth, agent_idx + 1, game_state.generateSuccessor(agent_idx, action), a, b)
+                cur_max = max(cur_max, v)
+                a = max(a, cur_max)
+                if cur_max >= b:
+                    return float('inf')
+            return cur_max
+        else:  # ghost
+            cur_min = float('inf')
+            next_agent_idx = agent_idx + 1
+            if agent_idx >= (game_state.getNumAgents() - 1):
+                depth -= 1
+                next_agent_idx = 0
+            for action in game_state.getLegalActions(agent_idx):
+                v = self.minMaxRecursion(depth, next_agent_idx, game_state.generateSuccessor(agent_idx, action), a, b)
+                cur_min = min(v, cur_min)
+                b = min(b, cur_min)
+                if cur_min <= a:
+                    return -float('inf')
+            return cur_min
