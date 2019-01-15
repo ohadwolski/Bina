@@ -16,15 +16,17 @@ class knn_classifier(abstract_classifier):
         self.k = k
 
     def classify(self, features):
-        nn_labels = {True: 0, False: 0}
         distances = []
         for known_features in self.data:
             distances.append(euclidean_distance(known_features, features))
-        for i in range(self.k):
+
+        votes = {True: 0, False: 0}
+        for _ in range(self.k):
             nn_idx = distances.index(min(distances))
-            nn_labels[self.labels[nn_idx]] += 1
+            votes[self.labels[nn_idx]] += 1
             distances[nn_idx] = float('inf')
-        if nn_labels[True] > nn_labels[False]:
+
+        if votes[True] > votes[False]:
             return 1
         else:
             return 0
