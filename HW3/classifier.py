@@ -42,8 +42,6 @@ class knn_factory(abstract_classifier_factory):
         return knn_classifier(data, labels, self.k)
 
 
-
-
 import random
 import pickle
 FOLD_FILENAME = "ecg_fold_%d.data"
@@ -131,8 +129,9 @@ def evaluate(classifier_factory, k):
 train_features, train_labels, test_features = load_data()
 
 # 3.2
-num_folds = 2
+num_folds = 10
 split_crosscheck_groups((train_features, train_labels), num_folds)
+
 
 # 3.5
 accuracy = {}
@@ -160,3 +159,60 @@ plt.ylabel("Accuracy")
 plt.plot(accuracy.keys(), accuracy.values())
 plt.show()
 
+
+# 7
+import sklearn.tree
+import sklearn.linear_model
+
+
+class tree_classifier(abstract_classifier):
+    def __init__(self, tree):
+        self.tree = tree
+
+    def classify(self, features):
+        return self.tree.predict(features.reshape(1, -1))[0]
+
+
+class tree_factory(abstract_classifier_factory):
+    name = "Decision Tree"
+
+    def __init__(self):
+        pass
+
+    def train(self, data, labels):
+        tree = sklearn.tree.DecisionTreeClassifier(criterion="entropy")
+        tree = tree.fit(data, labels)
+        return tree_classifier(tree)
+
+
+class perceptron_classifier(abstract_classifier):
+    def __init__(self, perceptron):
+        self.perceptron = perceptron
+
+    def classify(self, features):
+        return self.perceptron.predict(features.reshape(1, -1))[0]
+
+
+class perceptron_factory(abstract_classifier_factory):
+    name = "Perceptron"
+
+    def __init__(self):
+        pass
+
+    def train(self, data, labels):
+        perceptron = sklearn.linear_model.Perceptron()
+        perceptron = perceptron.fit(data, labels)
+        return perceptron_classifier(perceptron)
+
+
+accuracy = {}
+error = {}
+for i, factory in enumerate([tree_factory, perceptron_factory]):
+    accuracy[i], error[i] = evaluate(factory(), num_folds)
+    print("%s:" % factory.name, "Accuracy=%f" % accuracy[i], "Error=%f" % error[i])
+    print()
+import csv
+with open("experiments12.csv", 'w') as fd:
+    csv_writer = csv.writer(fd)
+    for k in accuracy:
+        csv_writer.writerow([k+1, accuracy[k], error[k]])
