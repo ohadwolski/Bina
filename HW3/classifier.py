@@ -216,3 +216,4 @@ with open("experiments12.csv", 'w') as fd:
     csv_writer = csv.writer(fd)
     for k in accuracy:
         csv_writer.writerow([k+1, accuracy[k], error[k]])
+
