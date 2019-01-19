@@ -1,6 +1,8 @@
 from hw3_utils import *
 import math
 
+from sklearn import svm
+
 
 def euclidean_distance(features_1, features_2):
     return np.linalg.norm(features_1 - features_2) ## REMOVE BEFORE SUBMISSSION
@@ -40,6 +42,7 @@ class knn_factory(abstract_classifier_factory):
 
     def train(self, data, labels):
         return knn_classifier(data, labels, self.k)
+
 
 
 import random
@@ -110,57 +113,30 @@ def evaluate(classifier_factory, k):
         test_labels = np.array(test[1])
         test_features = np.array(test[0])
         classifier = classifier_factory.train(train_features, train_labels)
+
+        local_success_count = 0
+        local_total_count = 0
         for features, label in zip(test_features, test_labels):
             inference_results = classifier.classify(features)
+
+            local_success_count += inference_results == label
+            local_total_count += 1
+
             success_count += inference_results == label
             if inference_results == label:
                 success[label] += 1
             else:
                 failure[label] += 1
             total_count += 1
+        acc = local_success_count / local_total_count
+        print("Accuracy of test on fold %d" % i, "is %f" % acc)
     accuracy = success_count / total_count
     error = 1.0 - accuracy
-    print("True Positive=%d" % success[True], "True Positive=%d" % success[False])
+    print("True Positive=%d" % success[True], "True Negative=%d" % success[False])
     print("False Positive=%d" % failure[True], "False Negative=%d" % failure[False])
     return accuracy, error
 
 
-# Load Features
-train_features, train_labels, test_features = load_data()
-
-# 3.2
-num_folds = 10
-split_crosscheck_groups((train_features, train_labels), num_folds)
-
-
-# 3.5
-accuracy = {}
-error = {}
-for k in [1, 3, 5, 7, 13]:
-    print("K=%d" % k)
-    knn = knn_factory(k)
-    accuracy[k], error[k] = evaluate(knn, num_folds)
-    print("K=%d:" % k, "Accuracy=%f" % accuracy[k], "Error=%f" % error[k])
-    print()
-
-# 3.5.1
-import csv
-with open("experiments6.csv", 'w') as fd:
-    csv_writer = csv.writer(fd)
-    for k in accuracy:
-        csv_writer.writerow([k, accuracy[k], error[k]])
-
-# 3.5.2
-import matplotlib.pyplot as plt
-plt.figure()
-plt.title("Accuracy as function of K")
-plt.xlabel("K")
-plt.ylabel("Accuracy")
-plt.plot(accuracy.keys(), accuracy.values())
-plt.show()
-
-
-# 7
 import sklearn.tree
 import sklearn.linear_model
 
@@ -185,6 +161,80 @@ class tree_factory(abstract_classifier_factory):
         return tree_classifier(tree)
 
 
+class svm_classifier(abstract_classifier):
+    def __init__(self, svm_clf):
+        self.clf = svm_clf
+
+    def classify(self, features):
+        return self.clf.predict(features.reshape(1, -1))[0]
+
+
+class svm_factory(abstract_classifier_factory):
+    name = "Svm Classifier"
+
+    def __init__(self):
+        pass
+
+    def train(self, data, labels):
+        clf = svm.SVC(gamma='scale')
+        clf.fit(data, labels)
+        return svm_classifier(clf)
+
+
+
+class ensemble_classifier(abstract_classifier):
+    def __init__(self, knn_clf, svm_clf, tree_min_samples_clf, perceptron_clf):
+        self.knn_clf = knn_clf
+        self.svm_clf = svm_clf
+        self.tree_min_samples_clf = tree_min_samples_clf
+        self.perceptron_clf = perceptron_clf
+
+    def classify(self, features):
+        if self.knn_clf.classify(features) == 1:
+            return 1
+        else:
+            vote = 0
+            if self.svm_clf.classify(features) == 1:
+                vote += 1
+            if self.tree_min_samples_clf.classify(features) == 1:
+                vote += 1
+            if self.perceptron_clf.classify(features) == 1:
+                vote += 1
+            if vote > 1:
+                return 1
+            else:
+                return 0
+
+
+class ensemble_factory(abstract_classifier_factory):
+    name = "Ensemble Classifier"
+
+    def __init__(self):
+        pass
+
+    def train(self, data, labels):
+        knn_clf = knn_factory(k=1).train(data, labels)
+        #tree_clf = tree_factory().train(data, labels)
+        svm_clf = svm_factory().train(data, labels)
+        tree_min_samples_clf = tree_min_samples_leaf_factory().train(data, labels)
+        perceptron_clf = perceptron_factory().train(data, labels)
+
+        return ensemble_classifier(knn_clf, svm_clf, tree_min_samples_clf, perceptron_clf)
+
+
+
+class tree_min_samples_leaf_factory(abstract_classifier_factory):
+    name = "Decision Tree with min samples in leaf"
+
+    def __init__(self):
+        pass
+
+    def train(self, data, labels):
+        tree = sklearn.tree.DecisionTreeClassifier(min_samples_leaf=30, criterion="entropy")
+        tree = tree.fit(data, labels)
+        return tree_classifier(tree)
+
+
 class perceptron_classifier(abstract_classifier):
     def __init__(self, perceptron):
         self.perceptron = perceptron
@@ -205,15 +255,59 @@ class perceptron_factory(abstract_classifier_factory):
         return perceptron_classifier(perceptron)
 
 
-accuracy = {}
-error = {}
-for i, factory in enumerate([tree_factory, perceptron_factory]):
-    accuracy[i], error[i] = evaluate(factory(), num_folds)
-    print("%s:" % factory.name, "Accuracy=%f" % accuracy[i], "Error=%f" % error[i])
-    print()
-import csv
-with open("experiments12.csv", 'w') as fd:
-    csv_writer = csv.writer(fd)
-    for k in accuracy:
-        csv_writer.writerow([k+1, accuracy[k], error[k]])
 
+###
+#### Load Features
+###train_features, train_labels, test_features = load_data()
+###
+#### 3.2
+###num_folds = 2
+###
+#### run only once:
+###split_crosscheck_groups((train_features, train_labels), num_folds)
+####
+###
+#### 3.5
+###accuracy = {}
+###error = {}
+###for k in [1, 3, 5, 7, 13]:
+###    print("K=%d" % k)
+###    knn = knn_factory(k)
+###    accuracy[k], error[k] = evaluate(knn, num_folds)
+###    print("K=%d:" % k, "Accuracy=%f" % accuracy[k], "Error=%f" % error[k])
+###    print()
+###
+#### 3.5.1
+###import csv
+###with open("experiments6.csv", 'w') as fd:
+###    csv_writer = csv.writer(fd)
+###    for k in accuracy:
+###        csv_writer.writerow([k, accuracy[k], error[k]])
+###
+#### 3.5.2
+###import matplotlib.pyplot as plt
+###plt.figure()
+###plt.title("Accuracy as function of K")
+###plt.xlabel("K")
+###plt.ylabel("Accuracy")
+###plt.plot(accuracy.keys(), accuracy.values())
+###plt.show()
+###
+###
+# 7
+
+
+###
+###accuracy = {}
+###error = {}
+###for i, factory in enumerate([tree_factory, perceptron_factory]):
+###    accuracy[i], error[i] = evaluate(factory(), num_folds)
+###    print("%s:" % factory.name, "Accuracy=%f" % accuracy[i], "Error=%f" % error[i])
+###    print()
+###import csv
+###with open("experiments12.csv", 'w') as fd:
+###    csv_writer = csv.writer(fd)
+###    for k in accuracy:
+###        csv_writer.writerow([k+1, accuracy[k], error[k]])
+###
+###
