@@ -1,4 +1,5 @@
 from hw3_utils import *
+import numpy as np
 import math
 import random
 import pickle
@@ -11,10 +12,9 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 def euclidean_distance(features_1, features_2):
-    count = 0
-    for feature_1, feature_2 in zip(features_1, features_2):
-        count += (feature_1 - feature_2) ** 2
-    return math.sqrt(count)
+
+    vec_diff = features_1 - features_2
+    return np.sqrt(np.dot(vec_diff, vec_diff))
 
 
 class knn_classifier(abstract_classifier):
