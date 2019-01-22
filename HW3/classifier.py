@@ -136,7 +136,7 @@ def evaluate(classifier_factory, k):
         acc = local_success_count / local_total_count
         print("Accuracy of test on fold %d" % i, "is %f" % acc)
     accuracy = success_count / total_count
-    error = 1.0 - accuracy
+    error = (total_count - success_count) / total_count
     print("True Positive=%d" % success[True], "True Negative=%d" % success[False])
     print("False Positive=%d" % failure[True], "False Negative=%d" % failure[False])
     return accuracy, error
